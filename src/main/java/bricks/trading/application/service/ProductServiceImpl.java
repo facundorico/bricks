@@ -43,15 +43,7 @@ public class ProductServiceImpl implements IProductService {
 
     @Override
     public ProductResponseDto create(ProductCreateDto productCreateDto) {
-        List<CategoryResponseDto> categoriesList = businessService.getAllCategories();
-
-        boolean exists = categoriesList.stream()
-                .anyMatch(category -> category.getCode().equalsIgnoreCase(productCreateDto.getCategory()));
-
-        if (Boolean.FALSE.equals(exists)) {
-            throw new CategoryNotFoundException(String.format(Messages.CATEGORY_NOT_FOUND_BY_CODE, productCreateDto.getCategory()));
-        }
-
+        validateCategory(productCreateDto.getCategory());
         Product product = converter.toModel(productCreateDto);
         return converter.toProductResponseDto(productRepository.create(product));
     }
@@ -63,6 +55,7 @@ public class ProductServiceImpl implements IProductService {
 
     @Override
     public ProductResponseDto update(Integer id, ProductCreateDto productCreateDto) {
+        validateCategory(productCreateDto.getCategory());
         Product productToUpdate = productRepository.findById(id).orElseThrow(() -> new RecordNotFoundException(String.format(Messages.PRODUCT_NOT_FOUND_BY_ID, id)));
         productToUpdate.setName(productCreateDto.getName());
         productToUpdate.setStock(productCreateDto.getStock());
@@ -71,5 +64,16 @@ public class ProductServiceImpl implements IProductService {
 
         Product product = converter.toModel(productToUpdate);
         return converter.toProductResponseDto(productRepository.create(product));
+    }
+
+    private void validateCategory(String categoryToValidate) {
+        List<CategoryResponseDto> categoriesList = businessService.getAllCategories();
+
+        boolean exists = categoriesList.stream()
+                .anyMatch(category -> category.getCode().equalsIgnoreCase(categoryToValidate));
+
+        if (Boolean.FALSE.equals(exists)) {
+            throw new CategoryNotFoundException(String.format(Messages.CATEGORY_NOT_FOUND_BY_CODE, categoryToValidate));
+        }
     }
 }
